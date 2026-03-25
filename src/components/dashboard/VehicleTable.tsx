@@ -100,10 +100,11 @@ const VehicleTable = ({ data }: VehicleTableProps) => {
         dataSource={filteredData}
         rowKey="id"
         pagination={{
-          pageSize: 10,
+          defaultPageSize: 10,
           showSizeChanger: true,
           showTotal: (total) => `全 ${total} 件`,
-          pageSizeOptions: ['10', '20', '50'],
+          pageSizeOptions: [10, 20, 50],
+          hideOnSinglePage: false,
         }}
         size="small"
       />
