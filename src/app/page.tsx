@@ -1,6 +1,6 @@
 'use client';
 
-import { Typography } from 'antd';
+import { Typography, theme } from 'antd';
 import {
   KPISummary,
   StatusPieChart,
@@ -30,9 +30,18 @@ function getKPIFromVehicles(vehicles: typeof mockVehicles) {
 
 export default function DashboardPage() {
   const kpi = getKPIFromVehicles(mockVehicles);
+  const { token } = theme.useToken();
 
   return (
-    <main style={{ maxWidth: 1400, margin: '0 auto', background: '#fff', padding: 24, borderRadius: 8 }}>
+    <main
+      style={{
+        maxWidth: 1400,
+        margin: '0 auto',
+        background: token.colorBgContainer,
+        padding: 24,
+        borderRadius: token.borderRadiusLG,
+      }}
+    >
       <Title level={3} style={{ marginBottom: 24, fontWeight: 600 }}>
         車両管理ダッシュボード
       </Title>

@@ -1,16 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-import { Layout, Menu, Typography, Avatar } from 'antd';
+import { useMemo, useState } from 'react';
+import { Layout, Menu, Typography, Avatar, Dropdown, Space, message, theme } from 'antd';
+import type { MenuProps } from 'antd';
 import {
   DashboardOutlined,
   CarOutlined,
   CalendarOutlined,
   ToolOutlined,
   SettingOutlined,
+  UserOutlined,
+  LogoutOutlined,
+  SunOutlined,
+  MoonOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAppTheme } from '@/components/providers/AntdProvider';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -26,6 +32,37 @@ const menuItems = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const { mode, setMode } = useAppTheme();
+  const { token } = theme.useToken();
+
+  const userMenuItems = useMemo<MenuProps['items']>(
+    () => [
+      {
+        key: 'profile',
+        icon: <UserOutlined />,
+        label: <Link href="/settings">プロフィール</Link>,
+      },
+      {
+        key: 'account',
+        icon: <SettingOutlined />,
+        label: <Link href="/settings">アカウント設定</Link>,
+      },
+      { type: 'divider' },
+      {
+        key: 'theme-toggle',
+        icon: mode === 'light' ? <MoonOutlined /> : <SunOutlined />,
+        label: mode === 'light' ? 'ダークモード' : 'ライトモード',
+      },
+      { type: 'divider' },
+      {
+        key: 'logout',
+        icon: <LogoutOutlined />,
+        label: 'ログアウト',
+        danger: true,
+      },
+    ],
+    [mode],
+  );
 
   return (
     <Layout style={{ height: '100vh', overflow: 'hidden', display: 'flex' }}>
@@ -34,7 +71,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         collapsed={collapsed}
         onCollapse={setCollapsed}
         width={220}
-        theme="light"
+        theme={mode === 'dark' ? 'dark' : 'light'}
         style={{ overflow: 'auto', flexShrink: 0 }}
       >
         <div
@@ -44,7 +81,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             alignItems: 'center',
             justifyContent: collapsed ? 'center' : 'flex-start',
             padding: collapsed ? 8 : '0 16px',
-            borderBottom: '1px solid #f0f0f0',
+            borderBottom: `1px solid ${token.colorBorderSecondary}`,
             gap: 12,
           }}
         >
@@ -72,25 +109,64 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Header
           style={{
             padding: '0 24px',
-            background: '#fff',
-            borderBottom: '1px solid #f0f0f0',
+            background: token.colorBgContainer,
+            borderBottom: `1px solid ${token.colorBorderSecondary}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Text type="secondary">管理者</Text>
-            <Avatar
-              src="/images/avt.png"
-              alt="管理者"
-              size="default"
-              style={{ border: '2px solid #e8e8e8' }}
-            />
-          </div>
+          <Dropdown
+            menu={{
+              items: userMenuItems,
+              onClick: ({ key }) => {
+                if (key === 'logout') {
+                  message.info('デモ環境のためログアウトは無効です');
+                  return;
+                }
+                if (key === 'theme-toggle') {
+                  setMode(mode === 'light' ? 'dark' : 'light');
+                }
+              },
+            }}
+            placement="bottomRight"
+            trigger={['click']}
+          >
+            <Space
+              size={12}
+              style={{ cursor: 'pointer', userSelect: 'none' }}
+              role="button"
+              tabIndex={0}
+              aria-haspopup="menu"
+              aria-label="ユーザーメニュー"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  (e.currentTarget as HTMLElement).click();
+                }
+              }}
+            >
+              <Text type="secondary">管理者</Text>
+              <Avatar
+                src="/images/avt.png"
+                alt="管理者"
+                size="default"
+                style={{ border: `2px solid ${token.colorBorder}` }}
+              />
+            </Space>
+          </Dropdown>
         </Header>
-        <Content style={{ margin: 0, flex: 1, minHeight: 0, overflow: 'auto', background: '#f5f5f5', padding: 24 }}>
+        <Content
+          style={{
+            margin: 0,
+            flex: 1,
+            minHeight: 0,
+            overflow: 'auto',
+            background: token.colorBgLayout,
+            padding: 24,
+          }}
+        >
           {children}
         </Content>
       </Layout>

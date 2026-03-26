@@ -1,9 +1,13 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Card, Table, Input, Select, Tag, Space } from 'antd';
+import { Card, Table, Input, DatePicker, Tag, Space } from 'antd';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import type { ColumnsType } from 'antd/es/table';
 import type { Vehicle, VehicleStatus } from '@/types/vehicle';
+
+const { RangePicker } = DatePicker;
 
 const statusColors: Record<VehicleStatus, string> = {
   使用中: 'blue',
@@ -18,17 +22,26 @@ interface VehicleTableProps {
 
 const VehicleTable = ({ data }: VehicleTableProps) => {
   const [searchText, setSearchText] = useState('');
-  const [statusFilter, setStatusFilter] = useState<VehicleStatus | undefined>();
+  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
 
   const filteredData = useMemo(() => {
     return data.filter((item) => {
       const matchesSearch =
         item.vehicle_code.toLowerCase().includes(searchText.toLowerCase()) ||
         item.vehicle_name.toLowerCase().includes(searchText.toLowerCase());
-      const matchesStatus = !statusFilter || item.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      if (!matchesSearch) return false;
+
+      if (dateRange?.[0] && dateRange?.[1]) {
+        const start = dateRange[0].startOf('day');
+        const end = dateRange[1].endOf('day');
+        const used = dayjs(item.last_used_date, 'YYYY-MM-DD', true);
+        if (!used.isValid()) return false;
+        if (used.isBefore(start) || used.isAfter(end)) return false;
+      }
+
+      return true;
     });
-  }, [data, searchText, statusFilter]);
+  }, [data, searchText, dateRange]);
 
   const columns: ColumnsType<Vehicle> = [
     {
@@ -43,11 +56,14 @@ const VehicleTable = ({ data }: VehicleTableProps) => {
       dataIndex: 'vehicle_name',
       key: 'vehicle_name',
       sorter: (a, b) => a.vehicle_name.localeCompare(b.vehicle_name),
+      width: 280,
+      ellipsis: { showTitle: true },
     },
     {
       title: 'ステータス',
       dataIndex: 'status',
       key: 'status',
+      width: 130,
       render: (status: VehicleStatus) => <Tag color={statusColors[status]}>{status}</Tag>,
       filters: [
         { text: '使用中', value: '使用中' },
@@ -80,22 +96,18 @@ const VehicleTable = ({ data }: VehicleTableProps) => {
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 220 }}
           />
-          <Select
-            placeholder="ステータスで絞り込み"
+          <RangePicker
             allowClear
-            style={{ width: 160 }}
-            onChange={setStatusFilter}
-            options={[
-              { value: '使用中', label: '使用中' },
-              { value: '利用可能', label: '利用可能' },
-              { value: '整備中', label: '整備中' },
-              { value: '予約済み', label: '予約済み' },
-            ]}
+            value={dateRange}
+            onChange={(dates) => setDateRange(dates)}
+            placeholder={['開始日', '終了日']}
+            style={{ width: 250 }}
           />
         </Space>
       }
     >
-      <Table
+      <Table<Vehicle>
+        tableLayout="fixed"
         columns={columns}
         dataSource={filteredData}
         rowKey="id"

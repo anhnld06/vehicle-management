@@ -17,3 +17,9 @@ body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* List.Item.Meta title: full width so Typography ellipsis + flex shrink work */
+.dashboard-alerts-maintenance .ant-list-item-meta-title {
+  width: 100%;
+  max-width: 100%;
+}
